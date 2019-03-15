@@ -27,33 +27,40 @@ module Regex where
 
  -- EJERCICIO 1
  simpl :: Regex -> Regex
- simpl Void = Void
- simpl Epsilon = Epsilon
- simpl (Symbol c) = Symbol c
- simpl (Star (Add Epsilon a)) = Star (simpl a)
- simpl (Star Epsilon) = Epsilon
- simpl (Star Void) = Epsilon
- simpl (Star (Star r)) = Star (simpl r)
- simpl (Star r) = Star (simpl r)
- simpl (Concat _ Void) = Void
- simpl (Concat Void _) = Void
- simpl (Concat a Epsilon) = simpl a
- simpl (Concat Epsilon a) = simpl a
- simpl (Concat (Star r)(Star s)) = 
+ simpl r = simplN r 10000
+
+ simplN :: Regex -> Int -> Regex
+ simplN r 0 = r
+ simplN r n = simplN (simplAux r) (n-1)
+
+ simplAux :: Regex -> Regex
+ simplAux Void = Void
+ simplAux Epsilon = Epsilon
+ simplAux (Symbol c) = Symbol c
+ simplAux (Star (Add Epsilon a)) = Star (simplAux a)
+ simplAux (Star Epsilon) = Epsilon
+ simplAux (Star Void) = Epsilon
+ simplAux (Star (Star r)) = Star (simplAux r)
+ simplAux (Star r) = Star (simplAux r)
+ simplAux (Concat _ Void) = Void
+ simplAux (Concat Void _) = Void
+ simplAux (Concat a Epsilon) = simplAux a
+ simplAux (Concat Epsilon a) = simplAux a
+ simplAux (Concat (Star r)(Star s)) = 
   if r == s 
-    then Star (simpl r)
-    else Concat (Star (simpl r))(Star (simpl s))
- simpl (Concat r s) = Concat (simpl r) (simpl s)
- simpl (Add a Void) = simpl a
- simpl (Add Void a) = simpl a
- simpl (Add Epsilon (Concat (Star a) b)) = 
+    then Star (simplAux r)
+    else Concat (Star (simplAux r))(Star (simplAux s))
+ simplAux (Concat r s) = Concat (simplAux r) (simplAux s)
+ simplAux (Add a Void) = simplAux a
+ simplAux (Add Void a) = simplAux a
+ simplAux (Add Epsilon (Concat (Star a) b)) = 
   if a == b 
-    then Star (simpl a)
-    else (Add (Epsilon) (Concat (Star (simpl a)) (simpl b)))
- simpl (Add r s) = 
+    then Star (simplAux a)
+    else (Add (Epsilon) (Concat (Star (simplAux a)) (simplAux b)))
+ simplAux (Add r s) = 
   if r == s 
-    then simpl r
-    else (Add (simpl r) (simpl s))
+    then simplAux r
+    else (Add (simplAux r) (simplAux s))
 
  -- EJERCICIO 2
  denot :: Regex -> Language
@@ -65,8 +72,7 @@ module Regex where
  denot (Add r1 r2) = union (denot r1) (denot r2)
 
  denotStar :: Regex -> Language
- denotStar (Star r) = "" : ((denot r) ++ (concatLen (denot r) (denot (Star r))))
- denotStar r = denot r
+ denotStar r = "" : (l ++ (concatLen l (denot (Star r)))) where l = denot r
 
  concatLen :: Language -> Language -> Language
  concatLen _ [] = []
@@ -80,8 +86,8 @@ module Regex where
 
  -- EJERCICIO 1
  deriv :: String -> Regex -> Regex
- deriv [] r = r
- deriv (x:xs) r = deriv xs (d x r)
+ deriv [] r = simpl r
+ deriv (x:xs) r = simpl (deriv xs (d x r))
 
   -- Derivada respecto a un símbolo
  d :: Char -> Regex -> Regex
@@ -106,13 +112,4 @@ module Regex where
 
   -- EJERCICIO 2
  matchV :: String -> Regex -> Bool
- matchV s r = buscaEps (deriv s r)
-
-  -- aux
- buscaEps :: Regex -> Bool
- buscaEps Void = False
- buscaEps Epsilon = True
- buscaEps (Symbol _) = False
- buscaEps (Star _) = True
- buscaEps (Concat r1 r2) = (buscaEps r1) && (buscaEps r2)
- buscaEps (Add r1 r2) = (buscaEps r1) || (buscaEps r2)
+ matchV s r = simpl (nul (deriv s r)) == Epsilon
