@@ -14,7 +14,7 @@ module Regex where
  -- Sinónimo para representar lenguajes como listas de cadenas.
  type Language = [String]
 
- -- Instancia de Show del tipo Regex, para que se impriman con formato en la consola. 
+ -- Instancia de Show del tipo Regex, para que se impriman con formato en la consola.
  instance Show Regex where
    show Void = "ø"
    show Epsilon = "ε"
@@ -27,7 +27,25 @@ module Regex where
 
  -- EJERCICIO 1
  simpl :: Regex -> Regex
- simpl = error "Falta Implementar"
+ simpl Void = Void
+ simpl Epsilon = Epsilon
+ simpl (Symbol c) = Symbol c
+ simpl (Add r s) = if r == s then simpl r
+                   else (Add (simpl r) (simpl s))
+ simpl (Add a Void) = simpl a
+ simpl (Add Void a) = simpl a
+ simpl (Concat a Void) = Void
+ simpl (Concat Void a) = Void
+ simpl (Concat a Epsilon) = simpl a
+ simpl (Concat Epsilon a) = simpl a
+ simpl (Add Epsilon (Concat (Star a) b)) = if a == b then Star (simpl a)
+                                           else (Add (Epsilon) (Concat (Star (simpl a)) (simpl b)))
+ simpl (Star (Add Epsilon a)) = Star (simpl a)
+ simpl (Star Epsilon) = Epsilon
+ simpl (Star Void) = Epsilon
+ simpl (Concat (Star r)(Star s)) = if r == s then Star (simpl r)
+                                   else Concat (Star (simpl r))(Star (simpl s))
+ simpl (Star (Star r)) = Star (simpl r)
 
  -- EJERCICIO 2
  denot :: Regex -> Language
@@ -35,19 +53,41 @@ module Regex where
 
  -- EJERCICIO 3
  matchD :: String -> Regex -> Bool
- matchD s r= elem s (denot r) 
+ matchD s r= elem s (denot r)
 
  -------------------- DERIVADA ----------------------
 
  -- EJERCICIO 1
  deriv :: String -> Regex -> Regex
- deriv = error "Falta Implementar"
+ deriv [] r = r
+ deriv (x:xs) r = deriv xs (d x r)
 
- -- EJERCICIO 2
+  -- Derivada respecto a un símbolo
+ d :: Char -> Regex -> Regex
+ d _ Void = Void
+ d _ Epsilon = Void
+ d x (Symbol y) =
+    if x == y
+        then Epsilon
+        else Void
+ d x (Star y) = Concat (d x y) (Star y)
+ d x (Concat y z) = Add (Concat (d x y) z) (Concat (nul y) (d x z))
+ d x (Add y z) =  Add (d x y) (d x z)
+
+  -- función de nulidad
+ nul :: Regex -> Regex
+ nul Void = Void
+ nul Epsilon = Epsilon
+ nul (Symbol _) = Void
+ nul (Star _) = Epsilon
+ nul (Concat  x y) = Concat (nul x) (nul y)
+ nul (Add x y ) = Add (nul x) (nul y)
+
+  -- EJERCICIO 2
  matchV :: String -> Regex -> Bool
  matchV s r = buscaEps (deriv s r)
 
- -- aux
+  -- aux
  buscaEps :: Regex -> Bool
  buscaEps Void = False
  buscaEps Epsilon = True
@@ -55,6 +95,3 @@ module Regex where
  buscaEps (Star _) = True
  buscaEps (Concat r1 r2) = (buscaEps r1) && (buscaEps r2)
  buscaEps (Add r1 r2) = (buscaEps r1) || (buscaEps r2)
-
-
-
