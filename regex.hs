@@ -41,7 +41,29 @@ module Regex where
 
  -- EJERCICIO 1
  deriv :: String -> Regex -> Regex
- deriv = error "Falta Implementar"
+ deriv [] r = r
+ deriv (x:xs) r = deriv xs (d x r)
+
+ -- Derivada respecto a un símbolo
+ d :: Char -> Regex -> Regex
+ d _ Void = Void
+ d _ Epsilon = Void
+ d x (Symbol y) = 
+     if x == y
+         then Epsilon
+         else Void
+ d x (Star y) = Concat (d x y) (Star y)
+ d x (Concat y z) = Add (Concat (d x y) z) (Concat (nul y) (d x z))
+ d x (Add y z) =  Add (d x y) (d x z)
+
+ -- función de nulidad
+ nul :: Regex -> Regex
+ nul Void = Void
+ nul Epsilon = Epsilon
+ nul (Symbol _) = Void
+ nul (Star _) = Epsilon
+ nul (Concat  x y) = Concat (nul x) (nul y)
+ nul (Add x y ) = Add (nul x) (nul y)
 
  -- EJERCICIO 2
  matchV :: String -> Regex -> Bool
