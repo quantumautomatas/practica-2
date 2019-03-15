@@ -27,11 +27,10 @@ module Regex where
 
  -- EJERCICIO 1
  simpl :: Regex -> Regex
- simpl r = simplN r 10000
-
- simplN :: Regex -> Int -> Regex
- simplN r 0 = r
- simplN r n = simplN (simplAux r) (n-1)
+ simpl r = let x = simplAux r in 
+  if r == x
+    then x
+    else simpl x
 
  simplAux :: Regex -> Regex
  simplAux Void = Void
