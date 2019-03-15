@@ -70,7 +70,7 @@ module Regex where
 
  concatLen :: Language -> Language -> Language
  concatLen _ [] = []
- concatLen a (x:xs) = [x++y | y <- a] ++ (concatLen a xs)
+ concatLen a (x:xs) = [y++x | y <- a] ++ (concatLen a xs)
 
  -- EJERCICIO 3
  matchD :: String -> Regex -> Bool
