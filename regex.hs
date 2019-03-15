@@ -35,7 +35,7 @@ module Regex where
 
  -- EJERCICIO 3
  matchD :: String -> Regex -> Bool
- matchD = error "Falta Implementar"
+ matchD s r= elem s (denot r) 
 
  -------------------- DERIVADA ----------------------
 
@@ -45,6 +45,16 @@ module Regex where
 
  -- EJERCICIO 2
  matchV :: String -> Regex -> Bool
- matchV = error "Falta Implementar"
+ matchV s r = buscaEps (deriv s r)
+
+ -- aux
+ buscaEps :: Regex -> Bool
+ buscaEps Void = False
+ buscaEps Epsilon = True
+ buscaEps (Symbol _) = False
+ buscaEps (Star _) = True
+ buscaEps (Concat r1 r2) = (buscaEps r1) && (buscaEps r2)
+ buscaEps (Add r1 r2) = (buscaEps r1) || (buscaEps r2)
+
 
 
